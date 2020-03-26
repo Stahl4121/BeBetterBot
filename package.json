@@ -1,0 +1,20 @@
+{
+  "name": "bebetterbot",
+  "version": "1.0.0",
+  "description": "API Interface for Telegram Bot",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Stahl4121/BeBetterBot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Stahl4121/BeBetterBot/issues"
+  },
+  "homepage": "https://github.com/Stahl4121/BeBetterBot#readme"
+}
