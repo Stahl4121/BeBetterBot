@@ -22,34 +22,32 @@ app.post('/', async (request, response) => {
 });
 
 function sendTextMessage(message, response) {
-  const text = runCommand(message.text.toLowerCase());
-  const chat_id = message.chat.id;
+  runCommand(message.text).then((text) => {
+    const chat_id = message.chat.id;
+    const url = baseURL + 'sendMessage';
 
-  const resMessage = {
-    chat_id: chat_id,
-    text: text
-  };
+    axios.post(url, { chat_id: chat_id, text: text })
+      .then(res => {
+        response.status(201).send(JSON.stringify({ status: 'success' }));
+      })
+      .catch(e => {
+        response.status(202).send(JSON.stringify({ status: 'failed to send message', error: e }));
+      });
+  });
+}
 
-  const url = baseURL + 'sendMessage';
-
-  axios.post(url, resMessage)
-    .then(res => {
-      response.status(201).send(JSON.stringify({ status: 'success' }));
-    })
-    .catch(e => {
-      response.status(202).send(JSON.stringify({ status: 'failed to send message', error: e }));
-    });
-};
-
-function runCommand(command) {
-  const key = command.charAt(0);
+async function runCommand(command) {
+  const key = command.charAt(0).toLowerCase();
   const value = command.slice(1).trim();
 
   let result = '';
 
   switch (key) {
-    case 'b':
-      result = getVerses(value);
+    case 'w':
+      result = logWeight(value).then((msg) => { return msg; });
+      break;
+    case 'h':
+      result = logHeartRate(value).then((msg) => { return msg; });
       break;
     default:
       result = 'No command \'' + key + '\' exists.'
