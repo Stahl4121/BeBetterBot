@@ -10,10 +10,10 @@ module.exports = function () {
   const abbr = {
     w: { type: 'weight',    db: 'healthStats' },
     h: { type: 'heartrate', db: 'healthStats' },
-    q: { type: 'quote',     db: 'quotes',     f: () => {} },
-    r: { type: 'rating',    db: 'ratings' }
+    q: { db: 'quotes',     f: () => {} },
+    r: { db: 'ratings' }
   }
-  const dbFields = { t: 'type', n: 'notes', a: 'author', sa: 'secondary author', s: 'source', ss: 'secondary source', p: 'page' }
+  const dbFields = { t: 'type', n: 'notes', 'na': name, a: 'author', sa: 'secondary author', s: 'source', ss: 'secondary source', p: 'page' }
 
   this.logItem = async function (params) {
     const key = params[0];
@@ -24,11 +24,13 @@ module.exports = function () {
 
     //Read in universal properties
     const value = params[1];
-    const type = abbr[key].type;
     const db = abbr[key].db;
+    const type = abbr[key].type;
     const func = abbr[key].f;
     const date = admin.firestore.Timestamp.now();
-    let data = { type: type, value: value, date: date };
+    let data = { value: value, date: date };
+
+    if (type) data = {...data, type: type};
 
     //Handle extra parameters in the command
     for (var i = 2; i < params.length; i++) {
@@ -64,6 +66,6 @@ module.exports = function () {
   };
 
   this.getRandomQuote = async function () {
-    
-  }
+    return '';
+  };
 };
