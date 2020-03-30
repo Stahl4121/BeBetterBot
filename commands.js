@@ -8,12 +8,12 @@ module.exports = function () {
   });
 
   const abbr = {
-    w: { type: 'weight',    db: 'healthStats' },
+    w: { type: 'weight', db: 'healthStats' },
     h: { type: 'heartrate', db: 'healthStats' },
-    q: { db: 'quotes',     f: () => {} },
+    q: { db: 'quotes', f: () => { } },
     r: { db: 'ratings' }
   }
-  const dbFields = { t: 'type', n: 'notes', 'na': name, a: 'author', sa: 'secondary author', s: 'source', ss: 'secondary source', p: 'page' }
+  const dbFields = { t: 'type', n: 'notes', 'na': name, a: 'author', sa: 'secondary_author', s: 'source', ss: 'secondary_source', p: 'page' }
 
   this.logItem = async function (params) {
     const key = params[0];
@@ -30,7 +30,7 @@ module.exports = function () {
     const date = admin.firestore.Timestamp.now();
     let data = { value: value, date: date };
 
-    if (type) data = {...data, type: type};
+    if (type) data = { ...data, type: type };
 
     //Handle extra parameters in the command
     for (var i = 2; i < params.length; i++) {
@@ -66,6 +66,17 @@ module.exports = function () {
   };
 
   this.getRandomQuote = async function () {
-    return '';
+    //TODO: Refactor to solution that uses fewer firebase reads
+    //https://stackoverflow.com/questions/46554091/cloud-firestore-collection-count
+    const promise = admin.firestore().collection('quotes').get().then(snap => {
+      const idx = Math.floor(Math.random() * snap.size);
+      const { value, author, source, date, page, secondary_author, secondary_source } = snap.docs[idx].data();
+      
+      return value + '\n' +
+        ' --' + author + ' in ' + source + '\n' +
+        '(found in ' + secondary_source + ' by ' + secondary_author + ', p. ' + page + ')';
+    });
+
+    return promise;
   };
 };

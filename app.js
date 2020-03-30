@@ -14,27 +14,37 @@ app.post('/', (request, response) => {
   try {
     const message = request.body.message;
     if (message) {
-      sendTextMessage(message.text, response);
+      const command = message.text;
+      const chat_id = message.chat.id;
+      runCommand(command).then(
+        (text) => { sendTextMessage(text, chat_id, response) });
     }
   } catch (e) {
     response.status(204).send(JSON.stringify({ status: 'failed to process and send message', error: e }));
   }
 });
 
-//Runs the command and sends a resulting success or failure message
-function sendTextMessage(command, response) {
-  runCommand(command).then((text) => {
-    const chat_id = message.chat.id;
-    const url = baseURL + 'sendMessage';
+app.post('/qotd', (request, response) => {
+  try {
+    const chat_id = 192284965; //My telegram id
+    getRandomQuote.then(
+      (text) => { sendTextMessage(text, chat_id, response) });
+  } catch (e) {
+    response.status(204).send(JSON.stringify({ status: 'failed to process and send message', error: e }));
+  }
+});
 
-    axios.post(url, { chat_id: chat_id, text: text })
-      .then(res => {
-        response.status(201).send(JSON.stringify({ status: 'success' }));
-      })
-      .catch(e => {
-        response.status(202).send(JSON.stringify({ status: 'failed to send message', error: e }));
-      });
-  });
+//Runs the command and sends a resulting success or failure message
+function sendTextMessage(text, chat_id, response) {
+  const url = baseURL + 'sendMessage';
+
+  axios.post(url, { chat_id: chat_id, text: text })
+    .then(res => {
+      response.status(201).send(JSON.stringify({ status: 'success' }));
+    })
+    .catch(e => {
+      response.status(202).send(JSON.stringify({ status: 'failed to send message', error: e }));
+    });
 }
 
 // Commands are in the format (without curly braces):

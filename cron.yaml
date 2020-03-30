@@ -1,0 +1,5 @@
+cron:
+- description: "Quote of the Day"
+  url: /qotd
+  schedule: every day 11:53
+  timezone: America/New_York
