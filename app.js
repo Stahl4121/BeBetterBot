@@ -24,10 +24,10 @@ app.post('/', (request, response) => {
   }
 });
 
-app.post('/qotd', (request, response) => {
+app.get('/qotd', (request, response) => {
   try {
     const chat_id = 192284965; //My telegram id
-    getRandomQuote.then(
+    getRandomQuote().then(
       (text) => { sendTextMessage(text, chat_id, response) });
   } catch (e) {
     response.status(204).send(JSON.stringify({ status: 'failed to process and send message', error: e }));
@@ -54,7 +54,12 @@ function sendTextMessage(text, chat_id, response) {
 // -- Any line breaks within the primary value are removed
 async function runCommand(command) {
   const params = command.split('/').map((s) => { return s.trim() }).filter(Boolean);
-  params[0] = params[0].toLowerCase();
-  params[1] = params[1].replace(/(\r\n|\n|\r)/gm, ""); //Remove all line breaks in value
-  return logItem(params);
+  if (params && params.length >= 2) {
+    params[0] = params[0].toLowerCase();
+    params[1] = params[1].replace(/(\r\n|\n|\r)/gm, ""); //Remove all line breaks in value
+    return logItem(params);
+  }
+  else {
+    return 'Invalid command syntax.'
+  }
 };

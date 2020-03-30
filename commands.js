@@ -13,7 +13,7 @@ module.exports = function () {
     q: { db: 'quotes', f: () => { } },
     r: { db: 'ratings' }
   }
-  const dbFields = { t: 'type', n: 'notes', 'na': name, a: 'author', sa: 'secondary_author', s: 'source', ss: 'secondary_source', p: 'page' }
+  const dbFields = { t: 'type', n: 'notes', na: 'name', a: 'author', sa: 'secondary_author', s: 'source', ss: 'secondary_source', p: 'page' }
 
   this.logItem = async function (params) {
     const key = params[0];

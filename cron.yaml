@@ -1,5 +1,5 @@
 cron:
 - description: "Quote of the Day"
   url: /qotd
-  schedule: every day 11:53
+  schedule: every day 9:00
   timezone: America/New_York
