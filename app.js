@@ -10,19 +10,20 @@ app.use(bodyParser.json());
 const token = '736303691:AAEOwCf4BOHVrs-0y_1zBqd5l8UKL73qow0';
 const baseURL = 'https://api.telegram.org/bot' + token + '/';
 
-app.post('/', async (request, response) => {
+app.post('/', (request, response) => {
   try {
     const message = request.body.message;
     if (message) {
-      sendTextMessage(message, response);
+      sendTextMessage(message.text, response);
     }
   } catch (e) {
-    response.status(204).send(JSON.stringify({ status: 'failed to send message', error: e }));
+    response.status(204).send(JSON.stringify({ status: 'failed to process and send message', error: e }));
   }
 });
 
-function sendTextMessage(message, response) {
-  runCommand(message.text).then((text) => {
+//Runs the command and sends a resulting success or failure message
+function sendTextMessage(command, response) {
+  runCommand(command).then((text) => {
     const chat_id = message.chat.id;
     const url = baseURL + 'sendMessage';
 
@@ -36,22 +37,14 @@ function sendTextMessage(message, response) {
   });
 }
 
+// Commands are in the format (without curly braces):
+//    /{command}/{value}/{field abbr} {field value}/{field abbr} {field value}...
+//
+// -- All leading/trailing whitespace is trimmed
+// -- Any line breaks within the primary value are removed
 async function runCommand(command) {
-  const key = command.charAt(0).toLowerCase();
-  const value = command.slice(1).trim();
-
-  let result = '';
-
-  switch (key) {
-    case 'w':
-      result = logWeight(value).then((msg) => { return msg; });
-      break;
-    case 'h':
-      result = logHeartRate(value).then((msg) => { return msg; });
-      break;
-    default:
-      result = 'No command \'' + key + '\' exists.'
-  }
-
-  return result;
+  const params = command.split('/').map((s) => { return s.trim() }).filter(Boolean);
+  params[0] = params[0].toLowerCase();
+  params[1] = params[1].replace(/(\r\n|\n|\r)/gm, ""); //Remove all line breaks in value
+  return logItem(params);
 };

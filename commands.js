@@ -7,47 +7,52 @@ module.exports = function () {
     databaseURL: "https://bebettertelegrambot.firebaseio.com"
   });
 
+  const abbr = {
+    w: { type: 'weight',    db: 'healthStats' },
+    h: { type: 'heartrate', db: 'healthStats' },
+    q: { type: 'quote',     db: 'quotes',     f: () => {} },
+    r: { type: 'rating',    db: 'ratings' }
+  }
+  const dbFields = { t: 'type', n: 'notes', a: 'author', sa: 'secondary author', s: 'source', ss: 'secondary source', p: 'page' }
 
-  this.getVerses = function (val) {
-    return '';
-  };
+  this.logItem = async function (params) {
+    const key = params[0];
 
-  this.logWeight = async function (val) {
-    const params = val.split(',').filter(Boolean).map((s) => { return s.trim() });
-    let date = admin.firestore.Timestamp.now();
-    let notes = '';
+    if (!abbr.hasOwnProperty(key)) {
+      return 'No command \'' + key + '\' exists.';
+    }
 
-    for (var i = 1; i < params.length; i++) {
-      if (params[i].charAt(0) === '#') {
-        //Remove param from array and split into parts
-        const param = params.splice(1, 1).toString();
-        const command = param.slice(1, 2).toLowerCase();
-        const content = param.slice(2, param.length);
+    //Read in universal properties
+    const value = params[1];
+    const type = abbr[key].type;
+    const db = abbr[key].db;
+    const func = abbr[key].f;
+    const date = admin.firestore.Timestamp.now();
+    let data = { type: type, value: value, date: date };
 
-        switch (command) {
-          //Example #d4/19 to specify April 19 of current year
-          case 'd':
-            const year = new Date(Date.now()).getFullYear();
-            const month = content.split('/')[0];
-            const day = content.split('/')[1];
-            date = admin.firestore.Timestamp.fromDate(new Date(year, month - 1, day, 12));
-            break;
-          default:
-        }
+    //Handle extra parameters in the command
+    for (var i = 2; i < params.length; i++) {
+      const index = params[i].indexOf(' ');
+      const command = params[i].slice(0, index);
+      const content = params[i].slice(index + 1);
+
+      switch (command) {
+        //e.g. "/d 0419" to specify April 19 of current year
+        case 'd':
+          const year = new Date(Date.now()).getFullYear();
+          const month = content.substring(0, 2);
+          const day = content.substring(2, 4);
+          const customDate = admin.firestore.Timestamp.fromDate(new Date(year, month - 1, day, 12));
+          data = { ...data, date: customDate };
+          break;
+        default:
+          if (dbFields.hasOwnProperty(command)) { data = { ...data, [dbFields[command]]: content } } //Fields w/o processing
+          else if (func) data = func(data, command, content); //Isolate specific functionality
       }
     }
 
-    //If one more param, then it's notes
-    if (params.length == 2) {
-      notes = params[1];
-    }
-    else if (params.length > 2) {
-      return "Error, invalid parameters."
-    }
-
-    let data = { type: 'weight', value: params[0], date: date, notes: notes };
-
-    const retVal = admin.firestore().collection('healthStats').doc('w'+String(data.date.toMillis())).set(data)
+    const docId = key + String(data.date.toMillis());
+    const promise = admin.firestore().collection(db).doc(docId).set(data)
       .then(function () {
         return "Success!"
       })
@@ -55,34 +60,10 @@ module.exports = function () {
         return "Error: " + error.message;
       });
 
-
-    return retVal;
+    return promise;
   };
 
-  this.logHeartRate = async function (val) {
-    const params = val.split(',').filter(Boolean).map((s) => { return s.trim() });
-    let date = admin.firestore.Timestamp.now();
-    let notes = '';
-
-    //If one more param, then it's notes
-    if (params.length == 2) {
-      notes = params[1];
-    }
-    else if (params.length > 2) {
-      return "Error, invalid parameters."
-    }
-
-    let data = { type: 'heartrate', value: params[0], date: date, notes: notes };
-
-    const retVal = admin.firestore().collection('healthStats').doc('h'+String(data.date.toMillis())).set(data)
-      .then(function () {
-        return "Success!"
-      })
-      .catch(function (error) {
-        return "Error: " + error.message;
-      });
-
-
-    return retVal;
-  };
-}
+  this.getRandomQuote = async function () {
+    
+  }
+};
