@@ -1,4 +1,5 @@
 require('./commands')(); //import helper commands
+require('./secrets')(); //import api keys
 
 const app = require('express')();
 const bodyParser = require('body-parser');
@@ -7,7 +8,6 @@ const axios = require('axios');
 app.listen(process.env.PORT);
 app.use(bodyParser.json());
 
-const token = '736303691:AAEOwCf4BOHVrs-0y_1zBqd5l8UKL73qow0';
 const baseURL = 'https://api.telegram.org/bot' + token + '/';
 
 app.post('/', (request, response) => {
@@ -26,9 +26,8 @@ app.post('/', (request, response) => {
 
 app.get('/qotd', (request, response) => {
   try {
-    const chat_id = 192284965; //My telegram id
     getRandomQuote().then(
-      (text) => { sendTextMessage(text, chat_id, response) });
+      (text) => { sendTextMessage(text, my_chat_id, response) });
   } catch (e) {
     response.status(204).send(JSON.stringify({ status: 'failed to process and send message', error: e }));
   }
@@ -62,3 +61,5 @@ async function runCommand(command) {
     return 'Invalid command syntax.'
   }
 };
+
+sendTextMessage('hey', my_chat_id, null)
