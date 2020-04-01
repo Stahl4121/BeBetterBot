@@ -10,7 +10,7 @@ module.exports = function () {
   const abbr = {
     w: { type: 'weight', db: 'healthStats' },
     h: { type: 'heartrate', db: 'healthStats' },
-    q: { db: 'quotes', f: () => { } },
+    q: { db: 'quotes', f: (p1,p2,p3) => logQuoteHelper(p1,p2,p3) },
     r: { db: 'ratings' }
   }
   const dbFields = { t: 'type', n: 'notes', na: 'name', a: 'author', sa: 'secondary_author', s: 'source', ss: 'secondary_source', p: 'page' }
@@ -28,15 +28,15 @@ module.exports = function () {
     const type = abbr[key].type;
     const func = abbr[key].f;
     const date = admin.firestore.Timestamp.now();
-    let data = { value: value, date: date };
+    const data = { value: value, date: date };
 
-    if (type) data = { ...data, type: type };
+    if (type) data.type = type;
 
     //Handle extra parameters in the command
     for (var i = 2; i < params.length; i++) {
       const index = params[i].indexOf(' ');
-      const command = params[i].slice(0, index);
-      const content = params[i].slice(index + 1);
+      const command = (index === -1) ? params[i] : params[i].slice(0, index);
+      const content = (index === -1) ? '' : params[i].slice(index + 1);
 
       switch (command) {
         //e.g. "/d 0419" to specify April 19 of current year
@@ -45,11 +45,11 @@ module.exports = function () {
           const month = content.substring(0, 2);
           const day = content.substring(2, 4);
           const customDate = admin.firestore.Timestamp.fromDate(new Date(year, month - 1, day, 12));
-          data = { ...data, date: customDate };
+          data.date = customDate;
           break;
         default:
-          if (dbFields.hasOwnProperty(command)) { data = { ...data, [dbFields[command]]: content } } //Fields w/o processing
-          else if (func) data = func(data, command, content); //Isolate specific functionality
+          if (dbFields.hasOwnProperty(command)) data[dbFields[command]] = content; //Fields w/o processing
+          else if (func) func(data, command, content); //Isolate specific functionality
       }
     }
 
@@ -65,16 +65,34 @@ module.exports = function () {
     return promise;
   };
 
+  logQuoteHelper = function (data, command, content) {
+    switch (command) {
+      case 'nl':
+        data.value = data.value.replace(/(\r\n|\n|\r)/gm, ""); //Remove all line breaks in quote
+        break;
+      default:
+    }
+    return data;
+  };
+
   this.getRandomQuote = async function () {
-    //TODO: Refactor to solution that uses fewer firebase reads
+    //TODO: Refactor to solution that uses fewer firebase reads 
+    //(sort by date, where 'used' = false, limit 1 ; update used property)
     //https://stackoverflow.com/questions/46554091/cloud-firestore-collection-count
     const promise = admin.firestore().collection('quotes').get().then(snap => {
       const idx = Math.floor(Math.random() * snap.size);
       const { value, author, source, date, page, secondary_author, secondary_source } = snap.docs[idx].data();
+      let quote = value + '\n -- ' + author;
+      quote += (author) ? author : '?';
+      quote += (source) ? (' in ' + source) : '';
       
-      return value + '\n' +
-        ' --' + author + ' in ' + source + '\n' +
-        '(found in ' + secondary_source + ' by ' + secondary_author + ', p. ' + page + ')';
+      if(secondary_source){
+        quote += ('\n(found in ' + secondary_source);
+        quote += (secondary_author) ? (' by ' + secondary_author) : '';
+        quote += (page) ? (', p. ' + page + ')') : ')';
+      }
+
+      return quote;
     });
 
     return promise;

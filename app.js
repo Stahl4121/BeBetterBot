@@ -56,7 +56,6 @@ async function runCommand(command) {
   const params = command.split('/').map((s) => { return s.trim() }).filter(Boolean);
   if (params && params.length >= 2) {
     params[0] = params[0].toLowerCase();
-    params[1] = params[1].replace(/(\r\n|\n|\r)/gm, ""); //Remove all line breaks in value
     return logItem(params);
   }
   else {
