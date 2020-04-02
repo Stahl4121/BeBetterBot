@@ -1,4 +1,10 @@
-//Helper commands for BeBetterBot
+// Helper commands for BeBetterBot
+
+// w - Log weight { n: notes, d: date (MMDD)}
+// hr - Log heartrate { n: notes, d: date (MMDD)}
+// q - Log quote  {t: type, n: notes, nl: remove newlines, a: author, sa: secondary_author, s: source, ss: secondary_source, p: page }
+// r - Log rating {t: type, n: notes, na: name}
+
 module.exports = function () {
   const admin = require("firebase-admin");
   const serviceAccount = require("./secret/bebettertelegrambot-firebase-adminsdk-j5p2w-71e0813985.json");
@@ -9,7 +15,7 @@ module.exports = function () {
 
   const abbr = {
     w: { type: 'weight', db: 'healthStats' },
-    h: { type: 'heartrate', db: 'healthStats' },
+    hr: { type: 'heartrate', db: 'healthStats' },
     q: { db: 'quotes', f: (p1,p2,p3) => logQuoteHelper(p1,p2,p3) },
     r: { db: 'ratings' }
   }

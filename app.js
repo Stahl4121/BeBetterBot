@@ -1,5 +1,5 @@
 require('./commands')(); //import helper commands
-require('./secrets')(); //import api keys
+require('./secret/telegramkeys')(); //import api keys
 
 const app = require('express')();
 const bodyParser = require('body-parser');
