@@ -68,7 +68,7 @@ module.exports = function () {
   logQuoteHelper = function (data, command, content) {
     switch (command) {
       case 'nl':
-        data.value = data.value.replace(/(\r\n|\n|\r)/gm, ""); //Remove all line breaks in quote
+        data.value = data.value.replace(/(\r\n|\n|\r)/gm, " "); //Remove all line breaks in quote
         break;
       default:
     }
@@ -82,12 +82,12 @@ module.exports = function () {
     const promise = admin.firestore().collection('quotes').get().then(snap => {
       const idx = Math.floor(Math.random() * snap.size);
       const { value, author, source, date, page, secondary_author, secondary_source } = snap.docs[idx].data();
-      let quote = value + '\n -- ' + author;
+      let quote = value + '\n -- ';
       quote += (author) ? author : '?';
-      quote += (source) ? (' in ' + source) : '';
+      quote += (source) ? (' in \"' + source + '\"') : '';
       
       if(secondary_source){
-        quote += ('\n(found in ' + secondary_source);
+        quote += ('\n(found in \"' + secondary_source + '\"');
         quote += (secondary_author) ? (' by ' + secondary_author) : '';
         quote += (page) ? (', p. ' + page + ')') : ')';
       }

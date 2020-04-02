@@ -61,5 +61,3 @@ async function runCommand(command) {
     return 'Invalid command syntax.'
   }
 };
-
-sendTextMessage('hey', my_chat_id, null)
