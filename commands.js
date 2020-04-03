@@ -35,7 +35,7 @@ module.exports = function () {
       fields: { t: 'type', na: 'name', a: 'author', s: 'source' }
     },
     b: {
-      db: 'bibleReadings', f: (p1, p2) => logBibleHelper(p1, p2),
+      db: 'bibleReadings', f: async (p1, p2) => {return logBibleHelper(p1, p2)},
       fields: {}
     }
   }
@@ -81,8 +81,7 @@ module.exports = function () {
       }
     }
 
-    if (func) func(data, params); //Isolate specific functionality
-    console.log(data.value + " " + data.chapters);
+    if (func) await func(data, params); //Isolate specific functionality
 
     const docId = key + String(data.date.toMillis());
     const promise = admin.firestore().collection(db).doc(docId).set(data)
@@ -109,8 +108,8 @@ module.exports = function () {
     if (data.value.charAt(0).toLowerCase() === 'a') numInSectionsRead.fill(1);
 
     for (var i = 2; i < params.length; i++) {
-      const section = params[i].slice(0, 1);
-      const numRead = params[i].slice(1);
+      const section = Number(params[i].slice(0, 1))-1;
+      const numRead = Number(params[i].slice(1));
       numInSectionsRead[section] = numRead;
     }
     data.value = numInSectionsRead;
@@ -119,23 +118,24 @@ module.exports = function () {
 
     const docRef = admin.firestore().collection('admin').doc('bibleReading');
     const promise = docRef.get().then(doc => {
-      const data = doc.data();
-      const c = data.current;
-      const a = data.assigned;
+      const docData = doc.data();
+      const c = docData.current;
+      const a = docData.assigned;
 
       //For logging purposes
-      const before = data.current.slice();
-      const now = data.current.slice();
+      const before = Object.assign({}, docData.current);
+      const now = Object.assign({}, docData.current);
 
       Object.keys(BOOKS_OF_BIBLE).forEach((section, i) => {
-        now[section] += (numInSectionsRead[i] - 1);
-        c[section] += (numInSectionsRead[i]);
+        now[section] = Number(now[section]) + numInSectionsRead[i] - 1;
+        c[section] = Number(c[section]) + numInSectionsRead[i];
         //Do not allow assigned reading to follow behind current
-        if (c[section] - 1 > a[section]) a[section] = c[section] - 1; 
+        if (c[section] - 1 > Number(a[section])) a[section] = c[section] - 1; 
       });
       data.chapters = formatBibleReading(before, now);
 
       docRef.update({ current: c, assigned: a }); //Update database with incremented values for day
+      return data;
     });
 
     return promise;
@@ -188,7 +188,7 @@ module.exports = function () {
 
     Object.keys(BOOKS_OF_BIBLE).forEach((section, i) => {
       //Handle case needed for logging chapters read
-      if (start[section] < end[section]) {
+      if (start[section] <= end[section]) {
         const [startBook, startChapter] = numToBookAndChapter(section, start[section]);
         const [endBook, endChapter] = numToBookAndChapter(section, end[section]);
         msg += startBook + ' ' + startChapter;
@@ -210,7 +210,7 @@ module.exports = function () {
       const data = doc.data();
       const c = data.current;
       const a = data.assigned;
-      Object.keys(BOOKS_OF_BIBLE).forEach((section) => { a[section] += 1; }); //Increment chapter per day
+      Object.keys(BOOKS_OF_BIBLE).forEach((section) => { a[section] = Number(a[section]) + 1; }); //Increment chapter per day
 
       docRef.update({ assigned: a }); //Update database with incremented values for day
 

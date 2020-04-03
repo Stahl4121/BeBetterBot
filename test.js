@@ -34,7 +34,7 @@
       fields: { t: 'type', na: 'name', a: 'author', s: 'source' }
     },
     b: {
-      db: 'bibleReadings', f: async function (p1, p2) {return await logBibleHelper(p1, p2)},
+      db: 'bibleReadings', f: async (p1, p2) => {return logBibleHelper(p1, p2)},
       fields: {}
     }
   }
@@ -81,9 +81,6 @@
     }
 
     if (func) await func(data, params); //Isolate specific functionality
-    console.log(data.value + "\\" + data.chapters);
-    console.log("]]]]");
-
 
     const docId = key + String(data.date.toMillis());
     const promise = admin.firestore().collection(db).doc(docId).set(data)
@@ -110,8 +107,8 @@
     if (data.value.charAt(0).toLowerCase() === 'a') numInSectionsRead.fill(1);
 
     for (var i = 2; i < params.length; i++) {
-      const section = params[i].slice(0, 1);
-      const numRead = params[i].slice(1);
+      const section = Number(params[i].slice(0, 1))-1;
+      const numRead = Number(params[i].slice(1));
       numInSectionsRead[section] = numRead;
     }
     data.value = numInSectionsRead;
@@ -120,13 +117,13 @@
 
     const docRef = admin.firestore().collection('admin').doc('bibleReading');
     const promise = docRef.get().then(doc => {
-      const data = doc.data();
-      const c = data.current;
-      const a = data.assigned;
+      const docData = doc.data();
+      const c = docData.current;
+      const a = docData.assigned;
 
       //For logging purposes
-      const before = Object.assign({}, data.current);
-      const now = Object.assign({}, data.current);
+      const before = Object.assign({}, docData.current);
+      const now = Object.assign({}, docData.current);
 
       Object.keys(BOOKS_OF_BIBLE).forEach((section, i) => {
         now[section] = Number(now[section]) + numInSectionsRead[i] - 1;
@@ -221,5 +218,3 @@
 
     return promise;
   };
-
-  console.log(logItem(['b','a']));
