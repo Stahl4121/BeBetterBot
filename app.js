@@ -33,6 +33,15 @@ app.get('/qotd', (request, response) => {
   }
 });
 
+app.get('/botd', (request, response) => {
+  try {
+    getBotd().then(
+      (text) => { sendTextMessage(text, my_chat_id, response) });
+  } catch (e) {
+    response.status(204).send(JSON.stringify({ status: 'failed to process and send message', error: e }));
+  }
+});
+
 //Runs the command and sends a resulting success or failure message
 function sendTextMessage(text, chat_id, response) {
   const url = baseURL + 'sendMessage';
@@ -44,7 +53,7 @@ function sendTextMessage(text, chat_id, response) {
     .catch(e => {
       response.status(202).send(JSON.stringify({ status: 'failed to send message', error: e }));
     });
-}
+};
 
 // Commands are in the format (without curly braces):
 //    /{command}/{value}/{field abbr} {field value}/{field abbr} {field value}...

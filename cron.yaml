@@ -3,3 +3,7 @@ cron:
   url: /qotd
   schedule: every day 9:00
   timezone: America/New_York
+- description: "Bible Chapters of the Day"
+  url: /botd
+  schedule: every day 4:00
+  timezone: America/New_York
