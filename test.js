@@ -81,6 +81,7 @@
     }
 
     if (func) await func(data, params); //Isolate specific functionality
+    console.log(data.value + '//' + data.chapters + '//' + data.total);
 
     const docId = key + String(data.date.toMillis());
     const promise = admin.firestore().collection(db).doc(docId).set(data)
@@ -103,17 +104,20 @@
 
   logBibleHelper = async function (data, params) {
     const len = Object.keys(BOOKS_OF_BIBLE).length;
-    const numInSectionsRead = new Array(len).fill(0);
-    if (data.value.charAt(0).toLowerCase() === 'a') numInSectionsRead.fill(1);
+    const readInEverySection = data.value.charAt(0).toLowerCase() === 'a';
+    let numOfEachRead = 0;
+    if (readInEverySection) numOfEachRead = Number(data.value.replace('a', '').trim());
+    const readAssigned = readInEverySection && numOfEachRead === 0; //Command was b/a/....
 
+    const numInSectionsRead = new Array(len).fill(numOfEachRead);
+
+    //Add additional section-specific reading
+    //e.g. b/a/11/25/51 or b/a 1/11/24/43
     for (var i = 2; i < params.length; i++) {
-      const section = Number(params[i].slice(0, 1))-1;
+      const section = Number(params[i].slice(0, 1)) - 1;
       const numRead = Number(params[i].slice(1));
-      numInSectionsRead[section] = numRead;
+      numInSectionsRead[section] = numInSectionsRead[section] + numRead;
     }
-    data.value = numInSectionsRead;
-    data.total = numInSectionsRead.reduce((a, b) => a + b, 0);
-    data.chapters = '';
 
     const docRef = admin.firestore().collection('admin').doc('bibleReading');
     const promise = docRef.get().then(doc => {
@@ -126,11 +130,21 @@
       const now = Object.assign({}, docData.current);
 
       Object.keys(BOOKS_OF_BIBLE).forEach((section, i) => {
-        now[section] = Number(now[section]) + numInSectionsRead[i] - 1;
-        c[section] = Number(c[section]) + numInSectionsRead[i];
+        const nSec = Number(n[section]);
+        const cSec = Number(c[section]);
+        const aSec = Number(a[section]);
+
+        if (readAssigned) numInSectionsRead[i] = numInSectionsRead[i] + ((aSec - cSec) + 1);
+
+        now[section] = nSec + numInSectionsRead[i] - 1;
+        c[section] = cSec + numInSectionsRead[i];
+
         //Do not allow assigned reading to follow behind current
-        if (Number(c[section]) - 1 > Number(a[section])) a[section] = Number(c[section]) - 1; 
+        if (cSec - 1 > aSec) a[section] = cSec - 1;
       });
+
+      data.value = numInSectionsRead;
+      data.total = numInSectionsRead.reduce((a, b) => a + b, 0);
       data.chapters = formatBibleReading(before, now);
 
       docRef.update({ current: c, assigned: a }); //Update database with incremented values for day
