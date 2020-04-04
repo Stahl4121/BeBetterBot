@@ -17,7 +17,7 @@ app.post('/', (request, response) => {
       const command = message.text;
       const chat_id = message.chat.id;
       runCommand(command).then(
-        (text) => { sendTextMessage(text, chat_id, response) });
+        (text) => { sendTextMessage({ text: text, chat_id: chat_id }, response) });
     }
   } catch (e) {
     response.status(204).send(JSON.stringify({ status: 'failed to process and send message', error: e }));
@@ -27,7 +27,7 @@ app.post('/', (request, response) => {
 app.get('/qotd', (request, response) => {
   try {
     getRandomQuote().then(
-      (text) => { sendTextMessage(text, my_chat_id, response) });
+      (text) => { sendTextMessage({ text: text, chat_id: my_chat_id }, response) });
   } catch (e) {
     response.status(204).send(JSON.stringify({ status: 'failed to process and send message', error: e }));
   }
@@ -36,17 +36,30 @@ app.get('/qotd', (request, response) => {
 app.get('/botd', (request, response) => {
   try {
     getBotd().then(
-      (text) => { sendTextMessage(text, my_chat_id, response) });
+      (text) => { sendTextMessage({ text: text, chat_id: my_chat_id }, response) });
+  } catch (e) {
+    response.status(204).send(JSON.stringify({ status: 'failed to process and send message', error: e }));
+  }
+});
+
+app.get('/lotd', (request, response) => {
+  try {
+    const text = "Valley of Vision\nMy Utmost for His Highest";
+    const entities = [
+      { type: 'text_link', url: 'https://banneroftruth.org/us/valley/', offset: 0, length: 16 },
+      { type: 'text_link', url: 'https://utmost.org/', offset: 17, length: 25 }
+    ];
+    sendTextMessage({ text: text, chat_id: my_chat_id, entities: entities, disable_web_page_preview: true }, response);
   } catch (e) {
     response.status(204).send(JSON.stringify({ status: 'failed to process and send message', error: e }));
   }
 });
 
 //Runs the command and sends a resulting success or failure message
-function sendTextMessage(text, chat_id, response) {
+function sendTextMessage(messageObj, response) {
   const url = baseURL + 'sendMessage';
 
-  axios.post(url, { chat_id: chat_id, text: text })
+  axios.post(url, messageObj)
     .then(res => {
       response.status(201).send(JSON.stringify({ status: 'success' }));
     })
@@ -70,3 +83,5 @@ async function runCommand(command) {
     return 'Invalid command syntax.'
   }
 };
+
+
