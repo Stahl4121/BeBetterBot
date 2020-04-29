@@ -29,7 +29,7 @@ app.get('/qotd', (request, response) => {
     getRandomQuote().then(
       (text) => { sendTextMessage({ text: text, chat_id: my_chat_id }, response) });
   } catch (e) {
-    response.status(204).send(JSON.stringify({ status: 'failed to process and send message', error: e }));
+    response.status(400).send(JSON.stringify({ status: 'failed to send qotd', error: e }));
   }
 });
 
@@ -38,7 +38,7 @@ app.get('/botd', (request, response) => {
     getBotd().then(
       (text) => { sendTextMessage({ text: text, chat_id: my_chat_id }, response) });
   } catch (e) {
-    response.status(204).send(JSON.stringify({ status: 'failed to process and send message', error: e }));
+    response.status(400).send(JSON.stringify({ status: 'failed to send botd', error: e }));
   }
 });
 

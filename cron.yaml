@@ -5,5 +5,5 @@ cron:
   timezone: America/New_York
 - description: "Bible Chapters of the Day"
   url: /botd
-  schedule: every day 4:00
+  schedule: every mon,tue,wed,thu,fri,sat 4:00
   timezone: America/New_York

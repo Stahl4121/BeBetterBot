@@ -215,9 +215,12 @@ formatBibleReading = function (start, end) {
       }
       else msg += ' - ' + endBook + ' ' + endChapter;
 
-      if (i !== Object.keys(BOOKS_OF_BIBLE).length - 1) msg += ', ';
+      msg += ', ';
     }
   });
+  
+  if (msg.slice(msg.length-2, msg.length) === ', ') msg = msg.slice(0,msg.length-2);
+  
   return msg;
 }
 
