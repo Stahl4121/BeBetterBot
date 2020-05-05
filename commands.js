@@ -138,9 +138,6 @@ module.exports = function () {
 
         now[section] = nSec + numInSectionsRead[i] - 1;
         c[section] = cSec + numInSectionsRead[i];
-
-        //Do not allow assigned reading to follow behind current
-        if (cSec - 1 > aSec) a[section] = cSec - 1;
       });
 
       data.value = numInSectionsRead;
@@ -176,67 +173,84 @@ module.exports = function () {
       else if (page) quote += '\n(p. ' + page + ')';
 
       return quote;
-  });
+    });
 
-  return promise;
-};
-
-const BOOKS_OF_BIBLE = {
-  1: { Genesis: 50, Exodus: 40, Leviticus: 27, Numbers: 36, Deuteronomy: 34 },
-  2: { '1 Chronicles': 29, '2 Chronicles': 36, Joshua: 24, Judges: 21, Ruth: 4, '1 Samuel': 31, '2 Samuel': 24, '1 Kings': 22, '2 Kings': 25, Ezra: 10, Nehemiah: 13, Esther: 10 },
-  3: { Job: 42, Psalms: 150, Proverbs: 31, Ecclesiastes: 12, 'Song of Solomon': 8 },
-  4: { Isaiah: 66, Jeremiah: 52, Lamentations: 5, Ezekiel: 48, Daniel: 12, Hosea: 14, Joel: 3, Amos: 9, Obadiah: 1, Jonah: 4, Micah: 7, Nahum: 3, Habakkuk: 3, Zephaniah: 3, Haggai: 2, Zechariah: 14, Malachi: 4 },
-  5: { Matthew: 28, Mark: 16, Luke: 24, John: 21, Acts: 28 },
-  6: { Romans: 16, '1 Corinthians': 16, '2 Corinthians': 13, Galatians: 6, Ephesians: 6, Philippians: 4, Colossians: 4, '1 Thessalonians': 5, '2 Thessalonians': 3, '1 Timothy': 6, '2 Timothy': 4, Titus: 3, Philemon: 1, Hebrews: 13, James: 5, '1 Peter': 5, '2 Peter': 3, '1 John': 5, '2 John': 1, '3 John': 1, Jude: 1, Revelation: 22 }
-}
-
-formatBibleReading = function (start, end) {
-  //Helper function
-  numToBookAndChapter = function (section, num) {
-    const b = BOOKS_OF_BIBLE[section];
-    for (const k in b) {
-      if (num <= b[k]) return [k, num];
-      else num = num - b[k];
-    }
-    return numToBookAndChapter(section, num); //Wrap around if at end of section
+    return promise;
   };
 
-  let msg = '';
+  const BOOKS_OF_BIBLE = {
+    1: { Genesis: 50, Exodus: 40, Leviticus: 27, Numbers: 36, Deuteronomy: 34 },
+    2: { '1 Chronicles': 29, '2 Chronicles': 36, Joshua: 24, Judges: 21, Ruth: 4, '1 Samuel': 31, '2 Samuel': 24, '1 Kings': 22, '2 Kings': 25, Ezra: 10, Nehemiah: 13, Esther: 10 },
+    3: { Job: 42, Psalms: 150, Proverbs: 31, Ecclesiastes: 12, 'Song of Solomon': 8 },
+    4: { Isaiah: 66, Jeremiah: 52, Lamentations: 5, Ezekiel: 48, Daniel: 12, Hosea: 14, Joel: 3, Amos: 9, Obadiah: 1, Jonah: 4, Micah: 7, Nahum: 3, Habakkuk: 3, Zephaniah: 3, Haggai: 2, Zechariah: 14, Malachi: 4 },
+    5: { Matthew: 28, Mark: 16, Luke: 24, John: 21, Acts: 28 },
+    6: { Romans: 16, '1 Corinthians': 16, '2 Corinthians': 13, Galatians: 6, Ephesians: 6, Philippians: 4, Colossians: 4, '1 Thessalonians': 5, '2 Thessalonians': 3, '1 Timothy': 6, '2 Timothy': 4, Titus: 3, Philemon: 1, Hebrews: 13, James: 5, '1 Peter': 5, '2 Peter': 3, '1 John': 5, '2 John': 1, '3 John': 1, Jude: 1, Revelation: 22 }
+  }
 
-  Object.keys(BOOKS_OF_BIBLE).forEach((section, i) => {
-    //Handle case needed for logging chapters read
-    if (start[section] <= end[section]) {
-      const [startBook, startChapter] = numToBookAndChapter(section, start[section]);
-      const [endBook, endChapter] = numToBookAndChapter(section, end[section]);
-      msg += startBook + ' ' + startChapter;
-
-      if (startBook === endBook) {
-        if (startChapter !== endChapter) msg += '-' + endChapter;
+  formatBibleReading = function (start, end) {
+    //Helper function
+    numToBookAndChapter = function (section, num) {
+      const b = BOOKS_OF_BIBLE[section];
+      for (const k in b) {
+        if (num <= b[k]) return [k, num];
+        else num = num - b[k];
       }
-      else msg += ' - ' + endBook + ' ' + endChapter;
+      return numToBookAndChapter(section, num); //Wrap around if at end of section
+    };
 
-      msg += ', ';
-    }
-  });
-  
-  if (msg.slice(msg.length-2, msg.length) === ', ') msg = msg.slice(0,msg.length-2);
-  
-  return msg;
-}
+    let msg = '';
 
-this.getBotd = async function () {
-  const docRef = admin.firestore().collection('admin').doc('bibleReading');
-  const promise = docRef.get().then(doc => {
-    const data = doc.data();
-    const c = data.current;
-    const a = data.assigned;
-    Object.keys(BOOKS_OF_BIBLE).forEach((section) => { a[section] = Number(a[section]) + 1; }); //Increment chapter per day
+    Object.keys(BOOKS_OF_BIBLE).forEach((section, i) => {
+      //Handle case needed for logging chapters read
+      if (start[section] <= end[section]) {
+        const [startBook, startChapter] = numToBookAndChapter(section, start[section]);
+        const [endBook, endChapter] = numToBookAndChapter(section, end[section]);
+        msg += startBook + ' ' + startChapter;
 
-    docRef.update({ assigned: a }); //Update database with incremented values for day
+        if (startBook === endBook) {
+          if (startChapter !== endChapter) msg += '-' + endChapter;
+        }
+        else msg += ' - ' + endBook + ' ' + endChapter;
 
-    return formatBibleReading(c, a);
-  });
+        msg += ', ';
+      }
+    });
 
-  return promise;
-};
+    if (msg.slice(msg.length - 2, msg.length) === ', ') msg = msg.slice(0, msg.length - 2);
+
+    return msg;
+  }
+
+  //Helper function
+  getNumChaptersAssigned = function (current, assigned) {
+    let num = 0;
+    Object.keys(BOOKS_OF_BIBLE).forEach((section) => {
+      const numInSection = (Number(assigned[section]) - Number(current[section])) + 1
+      if (numInSection > 0) num += numInSection; //Don't count negatives (if current is far ahead of assigned)
+    });
+    console.log(num + '__');
+    return num;
+  };
+
+  this.getBotd = async function () {
+    const docRef = admin.firestore().collection('admin').doc('bibleReading');
+    const promise = docRef.get().then(doc => {
+      const data = doc.data();
+      const c = data.current;
+      const a = data.assigned;
+      Object.keys(BOOKS_OF_BIBLE).forEach((section) => { a[section] = Number(a[section]) + 1; }); //Increment chapter per day
+
+      //Do not allow total assigned reading to fall below {number of sections} chs/day
+      Object.keys(BOOKS_OF_BIBLE).forEach((section) => {
+        const cSec = Number(c[section]);
+        if (getNumChaptersAssigned(c, a) < Object.keys(BOOKS_OF_BIBLE).length && (cSec > Number(a[section]))) { console.log("HEYY"); a[section] = cSec; }
+      });
+
+      docRef.update({ assigned: a }); //Update database with incremented values for day
+
+      return formatBibleReading(c, a);
+    });
+
+    return promise;
+  };
 };
